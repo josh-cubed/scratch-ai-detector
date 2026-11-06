@@ -5,6 +5,7 @@ import json
 import platform
 import subprocess
 import tests.variables as vartest
+import tests.coords as coordtest
 import tools.projects as projects
 
 # My code probably has some bad practices, I haven't used python in a while, sorry about that
@@ -55,7 +56,7 @@ print("Checking variables...")
 var_results = vartest.check_variables(project)
 
 print("Checking script coordinates...")
-coords_results = vartest.check_script_coords(project)
+coords_results = coordtest.check_script_coords(project)
 
 print("\n--- Test results ---")
 print("\nVariable test:")
