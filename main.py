@@ -26,7 +26,7 @@ while int(answer)-1 > len(available_files) and answer >= 0:
     answer = int(input("Enter a file number: "))
     # I had to add this because I typed in 3 by accident and it crashed my entire ide :sob:
 
-sb3file = available_files[answer - 1]
+sb3file = "samples/"+available_files[answer - 1]
 
 with ZipFile(sb3file, 'r') as zObject:
     # Extracting specific file in the zip
