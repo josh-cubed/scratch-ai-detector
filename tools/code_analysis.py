@@ -246,7 +246,14 @@ def get_sequence_block_signature(
 		# invalid opcode
 		return None
 
-	if op.startswith(("event_when", "procedures_definition", "procedures_prototype", "argument_reporter_")):
+	if op.startswith(
+		(
+			"event_when",
+			"procedures_definition",
+			"procedures_prototype",
+			"argument_reporter_",
+		)
+	):
 		# blocks related to events & procedures are not considered
 		return None
 

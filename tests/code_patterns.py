@@ -31,7 +31,9 @@ def report(grouped: dict) -> dict:
 	return {
 		"total_blocks": total_blocks,
 		"duplicated_blocks": duplicated,
-		"repetition_ratio": round(duplicated / total_blocks, 3) if total_blocks else 0.0,
+		"repetition_ratio": (
+			round(duplicated / total_blocks, 3) if total_blocks else 0.0
+		),
 		"findings": findings,
 	}
 
@@ -81,6 +83,7 @@ def analyze_repetition(project: dict[str, dict | list], threshold: int) -> dict:
 		"cross_sprite": cross_sprite,
 	}
 
+
 plural = lambda n, word: f"{n} {word}" + ("" if n == 1 else "s")
 
 
@@ -107,7 +110,9 @@ def make_repetitiveness_report(report: dict) -> str:
 			f"{t['duplicated_blocks']}/{t['total_blocks']} blocks are copies)"
 		)
 		for f in t["findings"][:MAX_PER_TARGET]:
-			lines.append(f"  {f['count']}x {f['preview']} ({plural(f['length'], 'block')})")
+			lines.append(
+				f"  {f['count']}x {f['preview']} ({plural(f['length'], 'block')})"
+			)
 
 	# cross-sprite repetition report
 	cross = report["cross_sprite"][:MAX_CROSS]

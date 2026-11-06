@@ -29,7 +29,10 @@ fstdout = lambda txt, prefix="", suffix="": prettyprint.prettyprint(txt)
 if "--output-logs" not in flags:
     log_file = open("logs.md", "w", encoding="utf-8")
     stdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + txt + suffix)
-    fstdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + prettyprint.clean_format(txt) + suffix)
+    fstdout = lambda txt, prefix="", suffix="\n": log_file.write(
+        prefix + prettyprint.clean_format(txt) + suffix
+    )
+
 
 def clear() -> None:
     if os_name == "Windows":
@@ -48,7 +51,7 @@ while answer <= 0:
     print("Invalid file number or project ID.")
     answer = int(input("Enter a file number or project ID: "))
 
-if answer-1 > len(available_files):
+if answer - 1 > len(available_files):
     print("Getting project...")
     project = projects.download_json(int(answer))
 else:
@@ -91,7 +94,10 @@ stdout("")
 stdout("Repetition test:", "## ")
 stdout("Notes:")
 stdout("AI relies on automated templates when generating SB3s.", "* ")
-stdout("As such, the same block patterns get copied over and over, something a human programmer would be unlikely to produce.", "* ")
+stdout(
+    "As such, the same block patterns get copied over and over, something a human programmer would be unlikely to produce.",
+    "* ",
+)
 stdout("However, keep in mind that this test is not that decisive.", "* ")
 stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n")
 

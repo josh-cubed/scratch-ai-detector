@@ -2,7 +2,7 @@ from collections import Counter
 from collections.abc import Callable
 
 
-def check_script_coords(project: dict[str, dict|list], stdout: Callable):
+def check_script_coords(project: dict[str, dict | list], stdout: Callable):
     # The coords in a scratch project are mostly random or placed on a grid (with an extension: Clean up Blocks + for example)
     # This test scans if there's a repeated pattern or stacked blocks on one coordinate
     # An AI often puts coords like "150, 100; 0, 10..." and not "157,102; 2, 13..."
