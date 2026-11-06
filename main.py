@@ -47,8 +47,15 @@ print("Checking variables...")
 
 var_results = vartest.check_variables(project)
 
+print("Checking script coordinates...")
+
+coords_results = vartest.check_script_coords(project)
+
 # subprocess.call("clear")
 
 print("--- Test results ---")
 print("Variable test:")
 print(var_results)
+
+print("Coordinates test:")
+print(coords_results)
