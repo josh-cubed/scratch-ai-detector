@@ -1,7 +1,9 @@
 from zipfile import ZipFile
+
 import os
-import subprocess
 import json
+import platform
+import subprocess
 import tests.variables as vartest
 import tools.projects as projects
 
@@ -9,51 +11,51 @@ import tools.projects as projects
 # It's also just a prototype/proof of concept right now, I'll probably polish this later
 # This script will also probably get replaced.
 
-subprocess.call("clear")
+os_name: str = platform.system()
+available_files: list[str] = list(
+    filter(lambda file: file.endswith(".sb3"), os.listdir("samples"))
+)
+project: dict[str, list | dict] = {}
 
-available_files = []
-project = []
 
-for i in os.listdir("samples"):
-    if i.endswith(".sb3"):
-        available_files.append(i)
+def clear() -> None:
+    if os_name == "Windows":
+        subprocess.run("cls", shell=True)
+    else:
+        subprocess.call("clear")
 
+
+clear()
 print("Please pick from one of the available files, or enter a project ID:")
-for i in range(0, len(available_files)):
-    print(str(i+1)+". - " + available_files[i])
-
+for i, file in enumerate(available_files, start=1):
+    print(f"{i}. - {file}")
 
 answer = int(input("Enter a file number or project ID: "))
-if int(answer)-1 > len(available_files):
+while answer <= 0:
+    print("Invalid file number or project ID.")
+    answer = int(input("Enter a file number or project ID: "))
+
+if answer > len(available_files):
     project = projects.download_json(int(answer))
     print(project)
 else:
-    sb3file = "samples/"+available_files[answer - 1]
+    sb3file = f"samples/{available_files[answer - 1]}"
 
-    with ZipFile(sb3file, 'r') as zObject:
-        # Extracting specific file in the zip
-        # into a specific location.
-        zObject.extract(
-            "project.json", path="")
+    with ZipFile(sb3file, "r") as zObject:
+        zObject.extract("project.json", path="")
         zObject.close()
 
     with open("project.json", "r") as project_load:
-        data=project_load.read()
-        project = json.loads(data)
+        project = json.load(project_load)
 
-subprocess.call("clear")
-
+clear()
 print("Checking variables...")
-
 var_results = vartest.check_variables(project)
 
 print("Checking script coordinates...")
-
 coords_results = vartest.check_script_coords(project)
 
-# subprocess.call("clear")
-
-print("--- Test results ---")
+print("\n--- Test results ---")
 print("Variable test:")
 print(var_results)
 
