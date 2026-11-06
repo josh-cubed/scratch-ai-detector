@@ -21,18 +21,18 @@ def check_variables(project):
     soup = '!#%()$*+,-./:;=?@[]^_`{|}~' +'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
     # These are all the possible characters in scratch variable ids
 
-    for i in project["targets"]:
-        print("Reading sprite" + i["name"])
-        for e in i["variables"]:
-            if all(f in soup for f in e) and len(e)==20:
+    for sprite in project["targets"]:
+        print("Reading sprite" + sprite["name"])
+        for varID in sprite["variables"]:
+            if all(char in soup for char in varID) and len(varID)==20:
                 cases["scratch_generated"]+=1
-            elif simplify(i["variables"][e][0]) == simplify(e): # Checks if the variable name and ID are roughly the same
+            elif simplify(sprite["variables"][varID][0]) == simplify(varID): # Checks if the variable name and ID are roughly the same
                 cases["code_generated"]+=1
             else:
                 cases["other_generated"]+=1
 
 
-            print(f"Editor: {all(f in soup for f in e)} - Matches: {simplify(i["variables"][e][0]) == simplify(e)} - {i["variables"][e][0]} - ID: {e} - Simplified: {simplify(i["variables"][e][0])}, {simplify(e)}")
+            print(f"Editor: {all(char in soup for char in varID) and len(str(varID)) == 20} - Matches: {simplify(sprite["variables"][varID][0]) == simplify(varID)} - Name: \"{sprite["variables"][varID][0]}\" - ID: {varID} - Simplified: {simplify(sprite["variables"][varID][0])}, {simplify(varID)}")
 
     return cases
 

@@ -47,7 +47,7 @@ print("Checking variables...")
 
 var_results = vartest.check_variables(project)
 
-subprocess.call("clear")
+# subprocess.call("clear")
 
 print("--- Test results ---")
 print("Variable test:")
