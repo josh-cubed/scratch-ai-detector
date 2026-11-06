@@ -16,6 +16,7 @@ def check_variables(project):
         # for example, "Very! cool_variable58" becomes "verycoolvariable58" for the check
         # if both the id and the variable name match after going through these process then
         # they go into the code_generated counter
+        "numeric_generated":0, # Variables that have a number
         "other_generated": 0 # These are variables that don't seem scratch-like or code generated
 
     }
@@ -31,6 +32,8 @@ def check_variables(project):
             elif simplify(sprite["variables"][varID][0]) == simplify(varID): # Checks if the variable name and ID are roughly the same
                 cases["code_generated"]+=1
             else:
+                if any(char.isdigit() for char in varID):
+                    cases["numeric_generated"]+=1
                 cases["other_generated"]+=1
 
 

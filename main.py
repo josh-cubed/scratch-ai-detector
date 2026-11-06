@@ -35,9 +35,10 @@ while answer <= 0:
     print("Invalid file number or project ID.")
     answer = int(input("Enter a file number or project ID: "))
 
-if answer > len(available_files):
+if answer-1 > len(available_files):
+    print("Getting project...")
     project = projects.download_json(int(answer))
-    print(project)
+    #print(project)
 else:
     sb3file = f"samples/{available_files[answer - 1]}"
 
@@ -49,6 +50,7 @@ else:
         project = json.load(project_load)
 
 clear()
+
 print("Checking variables...")
 var_results = vartest.check_variables(project)
 
@@ -56,8 +58,11 @@ print("Checking script coordinates...")
 coords_results = vartest.check_script_coords(project)
 
 print("\n--- Test results ---")
-print("Variable test:")
+print("\nVariable test:")
 print(var_results)
 
-print("Coordinates test:")
+print("\nCoordinates test:")
 print(coords_results)
+
+print("\nMetadata:")
+print(project["meta"])
