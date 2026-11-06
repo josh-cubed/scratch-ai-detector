@@ -12,7 +12,7 @@ subprocess.call("clear")
 
 available_files = []
 
-for i in os.listdir():
+for i in os.listdir("samples"):
     if i.endswith(".sb3"):
         available_files.append(i)
 
