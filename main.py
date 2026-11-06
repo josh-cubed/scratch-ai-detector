@@ -4,9 +4,12 @@ import os
 import json
 import platform
 import subprocess
+import sys
 import tests.variables as vartest
+import tests.code_patterns as patterntest
 import tests.coords as coordtest
 import tools.projects as projects
+import tools.prettyprint as prettyprint
 
 # My code probably has some bad practices, I haven't used python in a while, sorry about that
 # It's also just a prototype/proof of concept right now, I'll probably polish this later
@@ -18,6 +21,15 @@ available_files: list[str] = list(
 )
 project: dict[str, list | dict] = {}
 
+args: list[str] = sys.argv[1:]
+flags: list[str] = list(filter(lambda arg: arg.startswith("--"), args))
+stdout = lambda txt, prefix="", suffix="": print(txt)
+fstdout = lambda txt, prefix="", suffix="": prettyprint.prettyprint(txt)
+
+if "--output-logs" not in flags:
+    log_file = open("logs.md", "w", encoding="utf-8")
+    stdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + txt + suffix)
+    fstdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + prettyprint.clean_format(txt) + suffix)
 
 def clear() -> None:
     if os_name == "Windows":
@@ -39,7 +51,6 @@ while answer <= 0:
 if answer-1 > len(available_files):
     print("Getting project...")
     project = projects.download_json(int(answer))
-    #print(project)
 else:
     sb3file = f"samples/{available_files[answer - 1]}"
 
@@ -47,23 +58,42 @@ else:
         zObject.extract("project.json", path="")
         zObject.close()
 
-    with open("project.json", "r") as project_load:
+    with open("project.json", "r", encoding="utf-8") as project_load:
         project = json.load(project_load)
 
 clear()
 
-print("Checking variables...")
-var_results = vartest.check_variables(project)
+stdout("--- Begin testing ---", "# ")
 
-print("Checking script coordinates...")
-coords_results = coordtest.check_script_coords(project)
+stdout("Checking variables...", "\n**", "**\n")
+var_results = vartest.check_variables(project, stdout)
 
-print("\n--- Test results ---")
-print("\nVariable test:")
-print(var_results)
+stdout("Checking script coordinates...", "\n**", "**\n")
+coords_results = coordtest.check_script_coords(project, stdout)
 
-print("\nCoordinates test:")
-print(coords_results)
+stdout("Checking for repetition...", "\n**", "**\n")
+repetition_results = patterntest.analyze_repetition(project, 5)
 
-print("\nMetadata:")
-print(project["meta"])
+stdout("--- Test results ---", "# ")
+stdout("")
+stdout("Variable test:", "## ")
+fstdout(var_results, "```py\n", "\n```\n")
+
+stdout("")
+stdout("Coordinates test:", "## ")
+fstdout(coords_results, "```py\n", "\n```\n")
+
+stdout("")
+stdout("Metadata:", "## ")
+fstdout(project["meta"], "```py\n", "\n```\n")
+
+stdout("")
+stdout("Repetition test:", "## ")
+stdout("Notes:")
+stdout("AI relies on automated templates when generating SB3s.", "* ")
+stdout("As such, the same block patterns get copied over and over, something a human programmer would be unlikely to produce.", "* ")
+stdout("However, keep in mind that this test is not that decisive.", "* ")
+stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n")
+
+if "--output-logs" not in flags:
+    log_file.close()
