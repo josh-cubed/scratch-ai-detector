@@ -117,7 +117,10 @@ def make_repetitiveness_report(report: dict) -> str:
 	# cross-sprite repetition report
 	cross = report["cross_sprite"][:MAX_CROSS]
 	if cross:
-		lines.append("\nAcross sprites:")
+		if lines:
+			lines.append("")
+		
+		lines.append("Across sprites:")
 		for f in cross:
 			where = ", ".join(
 				n if c == 1 else f"{n} (x{c})" for n, c in f["targets"].items()
