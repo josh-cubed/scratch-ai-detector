@@ -152,13 +152,13 @@ def report(
 		if len(selected) < 2:
 			continue
 
-		claimed.update(local_claimed)
 		count = len(selected)
 		scope_count = len(set(selected_scopes)) if scoped else 1
 		if scoped and count < 5 and scope_count < 3:
 			continue
 		if not scoped and count < 3:
 			continue
+		claimed.update(local_claimed)
 
 		duplicates = length * (count - 1)
 		duplicated += duplicates

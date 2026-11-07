@@ -16,11 +16,17 @@ import tools.prettyprint as prettyprint
 # This script will also probably get replaced.
 
 os_name: str = platform.system()
-available_files: list[str] = list(
-    filter(lambda file: file.endswith(".sb3"), os.listdir("samples"))
-)
+available_files: list[str] = []
 project: dict[str, list | dict] = {}
 create_log_sections = not args.no_log_sections and not args.output_logs
+
+
+for category in ("human", "ai"):
+    category_dir = os.path.join("samples", category)
+    if os.path.isdir(category_dir):
+        for file in sorted(os.listdir(category_dir)):
+            if file.endswith(".sb3"):
+                available_files.append(f"{category}/{file}")
 
 
 def clear() -> None:
@@ -40,13 +46,13 @@ while answer <= 0:
     print("Invalid file number or project ID.")
     answer = int(input("Enter a file number or project ID: "))
 
-if answer - 1 > len(available_files):
+if answer > len(available_files):
     if not args.output_logs:
         stdout(f"https://scratch.mit.edu/projects/{answer}", stash=False)
     print("Getting project...")
     project = projects.download_json(int(answer))
 else:
-    sb3file = f"samples/{available_files[answer - 1]}"
+    sb3file = os.path.join("samples", available_files[answer - 1])
     if not args.output_logs:
         stdout(f"{sb3file}", stash=False)
 
