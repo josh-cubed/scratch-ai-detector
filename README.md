@@ -25,8 +25,6 @@ All outputs are directed to `logs.md` unless specified otherwise.
 | Coordinates | Moderate | Moderate |
 | Repetition | Moderate | Moderate |
 
-These ratings reflect the current implementation and sample set.
-
 ### Conclusion
 
 * Variable IDs remain the strongest signal because Scratch-generated IDs are hard to fake convincingly without leaving obvious numerical or name-based artifacts.
@@ -94,9 +92,11 @@ and data such as:
 
 It also calculates a repetition ratio as follows:
 ```
-                       # duplicated blocks
-repetition ratio = ---------------------------
-                   total # blocks in sequences
+                   duplicated blocks in matched patterns
+repetition ratio = -------------------------------------
+                     total blocks in matched patterns
 ```
+
+In the current implementation, this is the ratio of duplicated blocks inside the filtered, non-boilerplate repeated sequences that survived the signal check. This makes it stronger and more conservative than dividing by every block in the project.
 
 A high repetition ratio indicates that a project contains substantial amounts of duplicated code, especially when similar patterns repeat in lots of scripts or sprites. However, repetition alone is not definitive evidence of AI generation, and a low ratio **does not mean that the project is not AI-generated**!
