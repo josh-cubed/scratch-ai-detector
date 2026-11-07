@@ -12,7 +12,7 @@ All outputs are directed to `logs.md` unless specified otherwise.
 
 ### Flags
 * `--output-logs`: Prints the test logs to the console instead of writing it to `logs.md`
-* `--remove-log-sections`: Removes collapsible sections from the logs.
+* `--no-log-sections`: Removes collapsible sections from the logs.
 
 # Detection methods
 ## Variable IDs

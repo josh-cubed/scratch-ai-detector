@@ -1,7 +1,8 @@
 from zipfile import ZipFile
 
-import os
+import argparse
 import json
+import os
 import platform
 import subprocess
 import sys
@@ -21,14 +22,19 @@ available_files: list[str] = list(
 )
 project: dict[str, list | dict] = {}
 
-args: list[str] = sys.argv[1:]
-flags: list[str] = list(filter(lambda arg: arg.startswith("--"), args))
+arg_parser = argparse.ArgumentParser(
+    description="An AI-generated Scratch project detector."
+)
+arg_parser.add_argument("--output-logs", action="store_true", help="Print the test logs to the console instead of to logs.md.")
+arg_parser.add_argument("--no-log-sections", action="store_true", help="Remove collapsible log sections in logs.md.")
+
+args = arg_parser.parse_args()
 stdout = lambda txt, prefix="", suffix="": print(txt)
 fstdout = lambda txt, prefix="", suffix="": prettyprint.prettyprint(txt)
 
-create_log_sections = "--remove-log-sections" not in flags and "--output-logs" not in flags
+create_log_sections = not args.no_log_sections and not args.output_logs
 
-if "--output-logs" not in flags:
+if not args.output_logs:
     log_file = open("logs.md", "w", encoding="utf-8")
     stdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + txt + suffix)
     fstdout = lambda txt, prefix="", suffix="\n": log_file.write(
@@ -96,5 +102,5 @@ stdout("")
 stdout("Repetition test:", "## ")
 stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n")
 
-if "--output-logs" not in flags:
+if not args.output_logs:
     log_file.close()
