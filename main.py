@@ -78,13 +78,16 @@ repetition_results = patterntest.analyze_repetition(
     project, args.min_sequence, not args.include_inits
 )
 
+stdout("Checking for default input residues...", "\n**", "**\n\n")
+residue_results = patterntest.analyze_default_input_values(project)
+
 stdout("--- Test Results ---", "\n# ", stash=False)
 stdout("", stash=False)
-stdout("Variable test:", "## ", stash=False)
+stdout("Variable:", "## ", stash=False)
 fstdout(var_results, "```py\n", "\n```\n", stash=False)
 
 stdout("", stash=False)
-stdout("Coordinates test:", "## ", stash=False)
+stdout("Coordinates:", "## ", stash=False)
 fstdout(coords_results, "```py\n", "\n```\n", stash=False)
 
 stdout("", stash=False)
@@ -92,9 +95,18 @@ stdout("Metadata:", "## ", stash=False)
 fstdout(project["meta"], "```py\n", "\n```\n", stash=False)
 
 stdout("", stash=False)
-stdout("Repetition test:", "## ", stash=False)
+stdout("Repetition:", "## ", stash=False)
 stdout(
-    patterntest.make_repetitiveness_report(repetition_results),
+    patterntest.make_repetition_report(repetition_results),
+    "```\n",
+    "\n```\n",
+    stash=False,
+)
+
+stdout("", stash=False)
+stdout("Default input residue:", "## ", stash=False)
+stdout(
+    patterntest.make_default_input_values_report(residue_results),
     "```\n",
     "\n```\n",
     stash=False,

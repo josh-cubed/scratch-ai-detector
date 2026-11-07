@@ -100,3 +100,6 @@ repetition ratio = -------------------------------------
 In the current implementation, this is the ratio of duplicated blocks inside the filtered, non-boilerplate repeated sequences that survived the signal check. This makes it stronger and more conservative than dividing by every block in the project.
 
 A high repetition ratio indicates that a project contains substantial amounts of duplicated code, especially when similar patterns repeat in lots of scripts or sprites. However, repetition alone is not definitive evidence of AI generation, and a low ratio **does not mean that the project is not AI-generated**!
+
+## Default input values
+TBD, i don't have the time for this i gotta cook up new features

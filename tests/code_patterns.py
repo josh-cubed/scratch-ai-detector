@@ -11,6 +11,7 @@ from tools.code_analysis import (
 	get_sequence_runs,
 	get_similar_sequence_candidates,
 	get_sequence_block_signature,
+	default_input_value
 )
 
 # region Helpers
@@ -25,6 +26,7 @@ BASE_EXCLUDE_RATIO = 0.8
 HEAVY_RATIO, HEAVY_OVERALL = 0.8, 0.003
 MODERATE_RATIO, MODERATE_OVERALL = 0.55, 0.0015
 MIN_DUPLICATED = 10
+MIN_DEFAULT_CANDIDATES = 30
 
 plural = lambda n, word: f"{n} {word}" + ("" if n == 1 else "s")
 
@@ -47,25 +49,20 @@ def is_init_block(block, blocks) -> bool:
 
 
 def split_runs_by_init(runs, blocks, min_len=2, keep_init=True):
+	# A single init block in the middle of a broader script is often part of the
+	# real repeated logic (for example, updating a variable before broadcasting).
+	# Only aggressively drop runs that are dominated by init blocks.
 	out = []
-
-	def flush(segment, seg_is_init):
-		if len(segment) >= min_len and (keep_init or not seg_is_init):
-			out.append(segment)
-
 	for run in runs:
-		segment, seg_is_init = [], None
-		for bid in run:
-			init = is_init_block(blocks.get(bid), blocks)
-			if seg_is_init is None or init == seg_is_init:
-				segment.append(bid)
-			else:
-				flush(segment, seg_is_init)
-				segment = [bid]
+		if len(run) < min_len:
+			continue
 
-			seg_is_init = init
+		if not keep_init:
+			init_count = sum(1 for bid in run if is_init_block(blocks.get(bid), blocks))
+			if init_count and init_count / len(run) >= 0.5:
+				continue
 
-		flush(segment, seg_is_init)
+		out.append(run)
 
 	return out
 
@@ -277,9 +274,13 @@ def analyze_repetition(
 			grouped, scope_blocks=sprite_blocks, sequence_blocks=sequence_blocks
 		)
 
-		for key, runs in grouped.items():
-			for run in runs:
-				all_runs[key].append((name, run))
+		for run in runs:
+			key = tuple(
+				get_sequence_block_signature(blocks[bid], blocks) for bid in run
+			)
+			if not key or any(sig is None for sig in key):
+				continue
+			all_runs[key].append((name, run))
 
 	# check every script in the project, compared by signature
 	merged_grouped: dict[str, list] = {
@@ -336,10 +337,10 @@ def level_of(r: dict) -> str | None:
 	)
 
 
-def make_repetitiveness_report(report: dict) -> str:
+def make_repetition_report(report: dict) -> str:
 	lines = []
 
-	# per-sprite repetitiveness report
+	# per-sprite repetition report
 	for name, t in report["targets"].items():
 		level = level_of(t)
 		if not level:
@@ -349,16 +350,15 @@ def make_repetitiveness_report(report: dict) -> str:
 			lines.append("")
 
 		lines.append(
-			f"{name}: {level} ({t['repetition_ratio']:.1%}, "
-			f"{t['duplicated_blocks']}/{t['total_blocks']} blocks in detected sequences are copies; "
-			f"{t['overall_repetition_ratio']:.1%} of all {t['scope_blocks']} blocks in sprite)"
+			f"{name}: {level} ({t['overall_repetition_ratio']:.1%} of all {t['scope_blocks']} blocks in sprite; "
+			f"{t['duplicated_blocks']}/{t['total_blocks']} blocks in detected sequences are copies)"
 		)
 		for f in t["findings"][:MAX_PER_TARGET]:
 			lines.append(
 				f"  {f['count']}x {f['preview']} ({plural(f['length'], 'block')})"
 			)
 
-	# cross-sprite repetitiveness report
+	# cross-sprite repetition report
 	cross = report["cross_sprite"][:MAX_CROSS]
 	cross_summary = report["cross_sprite_report"]
 	cross_level = level_of(cross_summary)
@@ -370,10 +370,9 @@ def make_repetitiveness_report(report: dict) -> str:
 		if cross_level:
 			lines.append(
 				f"Across sprites: {cross_level} "
-				f"({cross_summary['repetition_ratio']:.1%}, "
+				f"({cross_summary['overall_repetition_ratio']:.1%} of all {cross_summary['scope_blocks']} blocks in project; "
 				f"{cross_summary['duplicated_blocks']}/"
-				f"{cross_summary['total_blocks']} blocks in detected sequences are copies"
-				f"; {cross_summary['overall_repetition_ratio']:.1%} of all {cross_summary['scope_blocks']} blocks in project)"
+				f"{cross_summary['total_blocks']} blocks in detected sequences are copies)"
 			)
 		else:
 			lines.append("Across sprites:")
@@ -384,7 +383,7 @@ def make_repetitiveness_report(report: dict) -> str:
 			)
 			lines.append(f"  {f['preview']} ({plural(f['length'], 'block')}): {where}")
 
-	# whole project's repetitiveness report
+	# whole project's repetition report
 	m = report["merged"]
 	if m:
 		level = level_of(m)
@@ -393,12 +392,64 @@ def make_repetitiveness_report(report: dict) -> str:
 				lines.append("")
 
 			lines.append(
-				f"Project: {level} ({m['repetition_ratio']:.1%}, "
-				f"{m['duplicated_blocks']}/{m['total_blocks']} blocks in detected sequences are copies"
-				f"; {m['overall_repetition_ratio']:.1%} of all {m['scope_blocks']} blocks in project)"
+				f"Project: {level} ({m['overall_repetition_ratio']:.1%} of all {m['scope_blocks']} blocks in project; "
+				f"{m['duplicated_blocks']}/{m['total_blocks']} blocks in detected sequences are copies)"
 			)
 
 	return "\n".join(lines) or "No notable repetition found."
+# endregion
+
+
+# region Input Analysis
+def analyze_default_input_values(project: dict) -> dict:
+	if not isinstance(project, dict):
+		return {"targets": {}, "project": {"hits": 0, "total": 0, "ratio": 0.0}}
+
+	targets: dict = {}
+	p_hits = p_total = 0
+	for i, target in enumerate(project.get("targets", [])):
+		if not isinstance(target, dict):
+			continue
+
+		blocks = target.get("blocks")
+		if not isinstance(blocks, dict) or not blocks:
+			continue
+
+		hits, total = default_input_value(blocks)
+		p_hits += hits
+		p_total += total
+		targets[target.get("name", f"target_{i}")] = {
+			"hits": hits,
+			"total": total,
+			"ratio": round(hits / total, 3) if total else 0.0,
+		}
+
+	return {
+		"targets": targets,
+		"project": {
+			"hits": p_hits,
+			"total": p_total,
+			"ratio": round(p_hits / p_total, 3) if p_total else 0.0,
+		},
+	}
+
+
+def make_default_input_values_report(result: dict) -> str:
+	p = result["project"]
+	if p["total"] < MIN_DEFAULT_CANDIDATES:
+		return (
+			f"Too few candidate inputs "
+			f"({p['total']}, need {MIN_DEFAULT_CANDIDATES}) to read."
+		)
+
+	lines = [
+		f"Default-value residue: {p['hits']}/{p['total']} inputs found have default values ({p['ratio']:.1%})"
+	]
+	for name, t in result["targets"].items():
+		if t["total"] >= MIN_DEFAULT_CANDIDATES:
+			lines.append(f"  {name}: {t['hits']}/{t['total']} ({t['ratio']:.1%})")
+
+	return "\n".join(lines)
 # endregion
 
 
