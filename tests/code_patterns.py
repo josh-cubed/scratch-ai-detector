@@ -1,3 +1,8 @@
+# Notes from creeperdoesredstone:
+# - This test is a work-in-progress and it will never be perfect!
+# - Its purpose is to analyze specific patterns in Scratch projects.
+# - You all can come to your own conclusions from there.
+
 from collections import Counter, defaultdict
 from tools.code_analysis import collect_sequence_runs
 

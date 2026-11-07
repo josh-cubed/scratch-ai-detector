@@ -1,9 +1,3 @@
-# Notes from creeperdoesredstone:
-# - This tool is a work-in-progress and it will never be perfect!
-# - Its purpose is to analyze specific patterns in Scratch projects.
-# - You all can come to your own conclusions from there.
-
-
 from collections import Counter
 from collections.abc import Generator
 from typing import Any
