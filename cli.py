@@ -3,7 +3,6 @@ from typing import Any
 import argparse
 import tools.prettyprint as prettyprint
 
-
 arg_parser = argparse.ArgumentParser(
     description="An AI-generated Scratch project detector."
 )
@@ -28,31 +27,59 @@ args = arg_parser.parse_args()
 stashed_lines: list[str] = []
 
 
-def stdout_base(text: str, prefix: str = "", suffix: str = "", stash: bool = True) -> None:
+def _stdout(
+    text: str,
+    prefix: str = "",
+    suffix: str = "",
+    stash: bool = True,
+    *,
+    file_output: bool = False,
+) -> None:
     if stash:
-        stashed_lines.append(text)
+        stashed_lines.append(prefix + text + suffix if file_output else text)
+    elif file_output:
+        log_file.write(prefix + text + suffix)
     else:
         print(text)
 
-def stdout_file(text: str, prefix: str = "", suffix: str = "\n", stash: bool = True) -> None:
-    if stash:
-        stashed_lines.append(prefix + text + suffix)
-    else:
-        log_file.write(prefix + text + suffix)
 
-def fstdout_base(text: Any, prefix: str = "", suffix: str = "", stash: bool = True) -> None:
-    if stash:
-        stashed_lines.append(prettyprint.format(text))
-    else:
-        prettyprint.prettyprint(text)
+def stdout_base(
+    text: str,
+    prefix: str = "",
+    suffix: str = "",
+    stash: bool = True,
+) -> None:
+    _stdout(text, prefix, suffix, stash)
 
-def fstdout_file(text: Any, prefix: str = "", suffix: str = "\n", stash: bool = True) -> None:
-    if stash:
-        stashed_lines.append(prefix + prettyprint.clean_format(text) + suffix)
-    else:
-        log_file.write(prefix + prettyprint.clean_format(text) + suffix)
 
-def finish():
+def stdout_file(
+    text: str,
+    prefix: str = "",
+    suffix: str = "\n",
+    stash: bool = True,
+) -> None:
+    _stdout(text, prefix, suffix, stash, file_output=True)
+
+
+def fstdout_base(
+    text: Any,
+    prefix: str = "",
+    suffix: str = "",
+    stash: bool = True,
+) -> None:
+    _stdout(prettyprint.format(text), prefix, suffix, stash)
+
+
+def fstdout_file(
+    text: Any,
+    prefix: str = "",
+    suffix: str = "\n",
+    stash: bool = True,
+) -> None:
+    _stdout(prettyprint.clean_format(text), prefix, suffix, stash, file_output=True)
+
+
+def finish() -> None:
     for line in stashed_lines:
         stdout(line, stash=False)
 
