@@ -22,6 +22,9 @@ INIT_OPCODES = {
 	"data_setvariableto",
 }
 BASE_EXCLUDE_RATIO = 0.8
+HEAVY_RATIO, HEAVY_OVERALL = 0.8, 0.003
+MODERATE_RATIO, MODERATE_OVERALL = 0.55, 0.0015
+MIN_DUPLICATED = 10
 
 plural = lambda n, word: f"{n} {word}" + ("" if n == 1 else "s")
 
@@ -93,6 +96,18 @@ def is_low_signal_sequence(key: tuple) -> bool:
 	return get_sequence_signal(key) < 0.4
 
 
+def get_repetitiveness(
+	ratio: float, duplicated: int = 0, overall: float = 0.0
+) -> str | None:
+	if duplicated < MIN_DUPLICATED:
+		return None
+
+	if ratio >= HEAVY_RATIO and overall >= HEAVY_OVERALL:
+		return "heavily repetitive"
+	if ratio >= MODERATE_RATIO and overall >= MODERATE_OVERALL:
+		return "moderately repetitive"
+
+	return None
 # endregion
 
 
@@ -184,6 +199,9 @@ def report(
 		"duplicated_blocks": duplicated,
 		"repetition_ratio": (
 			round(duplicated / total_blocks, 3) if total_blocks else 0.0
+		),
+		"sequence_ratio": (
+			round(duplicated / sequence_blocks, 3) if sequence_blocks else 0.0
 		),
 		"scope_blocks": scope_blocks or 0,
 		"overall_repetition_ratio": (
@@ -312,13 +330,10 @@ def analyze_repetition(
 	}
 
 
-def get_repetitiveness(ratio: float) -> str | None:
-	if ratio >= 0.6:
-		return "heavily repetitive"
-	if ratio >= 0.35:
-		return "moderately repetitive"
-
-	return None
+def level_of(r: dict) -> str | None:
+	return get_repetitiveness(
+		r["repetition_ratio"], r["duplicated_blocks"], r["overall_repetition_ratio"]
+	)
 
 
 def make_repetitiveness_report(report: dict) -> str:
@@ -326,7 +341,7 @@ def make_repetitiveness_report(report: dict) -> str:
 
 	# per-sprite repetitiveness report
 	for name, t in report["targets"].items():
-		level = get_repetitiveness(t["repetition_ratio"])
+		level = level_of(t)
 		if not level:
 			continue
 
@@ -334,9 +349,9 @@ def make_repetitiveness_report(report: dict) -> str:
 			lines.append("")
 
 		lines.append(
-			f"{name}: {level} ({t['repetition_ratio']:.0%}, "
+			f"{name}: {level} ({t['repetition_ratio']:.1%}, "
 			f"{t['duplicated_blocks']}/{t['total_blocks']} blocks in detected sequences are copies; "
-			f"{t['overall_repetition_ratio']:.0%} of all {t['scope_blocks']} blocks in sprite)"
+			f"{t['overall_repetition_ratio']:.1%} of all {t['scope_blocks']} blocks in sprite)"
 		)
 		for f in t["findings"][:MAX_PER_TARGET]:
 			lines.append(
@@ -346,20 +361,19 @@ def make_repetitiveness_report(report: dict) -> str:
 	# cross-sprite repetitiveness report
 	cross = report["cross_sprite"][:MAX_CROSS]
 	cross_summary = report["cross_sprite_report"]
+	cross_level = level_of(cross_summary)
 
-	if cross or get_repetitiveness(cross_summary["repetition_ratio"]):
+	if cross or cross_level:
 		if lines:
 			lines.append("")
 
-		level = get_repetitiveness(cross_summary["repetition_ratio"])
-
-		if level:
+		if cross_level:
 			lines.append(
-				f"Across sprites: {level} "
-				f"({cross_summary['repetition_ratio']:.0%}, "
+				f"Across sprites: {cross_level} "
+				f"({cross_summary['repetition_ratio']:.1%}, "
 				f"{cross_summary['duplicated_blocks']}/"
 				f"{cross_summary['total_blocks']} blocks in detected sequences are copies"
-				f"; {cross_summary['overall_repetition_ratio']:.0%} of all {cross_summary['scope_blocks']} blocks in project)"
+				f"; {cross_summary['overall_repetition_ratio']:.1%} of all {cross_summary['scope_blocks']} blocks in project)"
 			)
 		else:
 			lines.append("Across sprites:")
@@ -373,20 +387,18 @@ def make_repetitiveness_report(report: dict) -> str:
 	# whole project's repetitiveness report
 	m = report["merged"]
 	if m:
-		level = get_repetitiveness(m["repetition_ratio"])
+		level = level_of(m)
 		if level:
 			if lines:
 				lines.append("")
 
 			lines.append(
-				f"Project: {level} ({m['repetition_ratio']:.0%}, "
+				f"Project: {level} ({m['repetition_ratio']:.1%}, "
 				f"{m['duplicated_blocks']}/{m['total_blocks']} blocks in detected sequences are copies"
-				f"; {m['overall_repetition_ratio']:.0%} of all {m['scope_blocks']} blocks in project)"
+				f"; {m['overall_repetition_ratio']:.1%} of all {m['scope_blocks']} blocks in project)"
 			)
 
 	return "\n".join(lines) or "No notable repetition found."
-
-
 # endregion
 
 
