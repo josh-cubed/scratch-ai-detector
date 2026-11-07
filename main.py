@@ -33,7 +33,8 @@ def clear() -> None:
     if os_name == "Windows":
         subprocess.run("cls", shell=True)
     elif "TERM" in os.environ:
-        subprocess.run("clear")
+        subprocess.call("clear")
+
 
 clear()
 print("Please pick from one of the available files, or enter a project ID:")
@@ -69,21 +70,28 @@ stdout("--- Test Logs ---", "# ")
 stdout("Checking variables...", "\n**", "**\n\n")
 var_results = vartest.check_variables(project, stdout, create_log_sections)
 
+stdout("Checking naming conventions...", "\n**", "**\n\n")
+naming_results = vartest.analyze_naming_conventions(project, stdout, create_log_sections)
+
 stdout("Checking script coordinates...", "\n**", "**\n\n")
 coords_results = coordtest.check_script_coords(project, stdout, create_log_sections)
 
 stdout("Checking for repetition...", "\n**", "**\n\n")
 repetition_results = patterntest.analyze_repetition(
-    project, args.min_sequence, not args.include_inits
+    project, args.min_sequence, stdout, create_log_sections, not args.include_inits
 )
 
-stdout("Checking for default input residues...", "\n**", "**\n\n")
+stdout("Finding default input values...", "\n**", "**\n\n")
 residue_results = patterntest.analyze_default_input_values(project)
 
 stdout("--- Test Results ---", "\n# ", stash=False)
 stdout("", stash=False)
 stdout("Variable:", "## ", stash=False)
 fstdout(var_results, "```py\n", "\n```\n", stash=False)
+
+stdout("", stash=False)
+stdout("Naming conventions:", "## ", stash=False)
+fstdout(naming_results, "```py\n", "\n```\n", stash=False)
 
 stdout("", stash=False)
 stdout("Coordinates:", "## ", stash=False)
@@ -103,7 +111,7 @@ stdout(
 )
 
 stdout("", stash=False)
-stdout("Default input residue:", "## ", stash=False)
+stdout("Default input values:", "## ", stash=False)
 stdout(
     patterntest.make_default_input_values_report(residue_results),
     "```\n",

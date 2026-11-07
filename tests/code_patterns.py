@@ -4,6 +4,7 @@
 # - You all can come to your own conclusions from there.
 
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from tools.code_analysis import (
 	count_blocks,
 	get_container_names,
@@ -211,8 +212,9 @@ def report(
 def analyze_repetition(
 	project: dict[str, dict | list],
 	threshold: int,
+	stdout: Callable,
+	create_log_sections: bool,
 	exclude_init: bool = False,
-	exclude_ratio: float = BASE_EXCLUDE_RATIO,
 ) -> dict:
 	if not isinstance(project, dict):
 		return {
@@ -229,6 +231,15 @@ def analyze_repetition(
 	for i, target in enumerate(project.get("targets", [])):
 		if not isinstance(target, dict):
 			continue
+
+		if create_log_sections:
+			stdout("<details>\n<summary>", suffix="")
+	
+		stdout("Reading sprite " + target["name"], suffix="")
+		if create_log_sections:
+			stdout("</summary>")
+	
+		stdout("")
 
 		blocks = target.get("blocks")
 		if not isinstance(blocks, dict) or not blocks:
@@ -255,6 +266,7 @@ def analyze_repetition(
 			key = tuple(
 				get_sequence_block_signature(blocks[bid], blocks) for bid in group[0]
 			)
+			stdout(f"Getting sequence `{describe_sequence(key)}`", "* ")
 
 			grouped[key].extend(group)
 
@@ -281,6 +293,13 @@ def analyze_repetition(
 			if not key or any(sig is None for sig in key):
 				continue
 			all_runs[key].append((name, run))
+
+		if create_log_sections:
+			stdout(
+				"</details>",
+			)
+		else:
+			stdout("")
 
 	# check every script in the project, compared by signature
 	merged_grouped: dict[str, list] = {
@@ -322,6 +341,9 @@ def analyze_repetition(
 			scope_blocks=project_blocks,
 			sequence_blocks=project_sequence_blocks,
 		)
+
+	if create_log_sections:
+		stdout("<br>")
 
 	return {
 		"targets": targets,
@@ -401,7 +423,7 @@ def make_repetition_report(report: dict) -> str:
 
 
 # region Input Analysis
-def analyze_default_input_values(project: dict) -> dict:
+def analyze_default_input_values(project: dict[str, dict | list]) -> dict:
 	if not isinstance(project, dict):
 		return {"targets": {}, "project": {"hits": 0, "total": 0, "ratio": 0.0}}
 
@@ -434,7 +456,7 @@ def analyze_default_input_values(project: dict) -> dict:
 	}
 
 
-def make_default_input_values_report(result: dict) -> str:
+def make_default_input_values_report(result: dict[str, dict | list]) -> str:
 	p = result["project"]
 	if p["total"] < MIN_DEFAULT_CANDIDATES:
 		return (
