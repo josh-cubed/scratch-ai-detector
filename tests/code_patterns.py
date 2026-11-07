@@ -105,6 +105,9 @@ def make_repetitiveness_report(report: dict) -> str:
 		if not level:
 			continue
 
+		if lines:
+			lines.append("")
+
 		lines.append(
 			f"{name}: {level} ({t['repetition_ratio']:.0%}, "
 			f"{t['duplicated_blocks']}/{t['total_blocks']} blocks are copies)"
@@ -131,6 +134,9 @@ def make_repetitiveness_report(report: dict) -> str:
 	if m:
 		level = get_repetitiveness(m["repetition_ratio"])
 		if level:
+			if lines:
+				lines.append("")
+			
 			lines.append(
 				f"Project: {level} ({m['repetition_ratio']:.0%}, "
 				f"{m['duplicated_blocks']}/{m['total_blocks']} blocks are copies)"
