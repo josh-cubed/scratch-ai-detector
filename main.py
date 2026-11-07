@@ -8,6 +8,7 @@ import subprocess
 import tests.variables as vartest
 import tests.code_patterns as patterntest
 import tests.coords as coordtest
+import tests.c2pa as c2patest
 import tools.projects as projects
 import tools.prettyprint as prettyprint
 
@@ -18,6 +19,7 @@ import tools.prettyprint as prettyprint
 os_name: str = platform.system()
 available_files: list[str] = []
 project: dict[str, list | dict] = {}
+assets: dict[str, bytes] = {}
 create_log_sections = not args.no_log_sections and not args.output_logs
 
 
@@ -51,10 +53,14 @@ if answer > len(available_files):
         stdout(f"https://scratch.mit.edu/projects/{answer}", stash=False)
     print("Getting project...")
     project = projects.download_json(int(answer))
+    print("Getting assets...")
+    assets = projects.download_assets(project)
 else:
     sb3file = os.path.join("samples", available_files[answer - 1])
     if not args.output_logs:
         stdout(f"{sb3file}", stash=False)
+
+    assets = projects.read_assets(sb3file)
 
     with ZipFile(sb3file, "r") as zObject:
         zObject.extract("project.json", path="")
@@ -114,6 +120,15 @@ stdout("", stash=False)
 stdout("Default input values:", "## ", stash=False)
 stdout(
     patterntest.make_default_input_values_report(residue_results),
+    "```\n",
+    "\n```\n",
+    stash=False,
+)
+
+stdout("", stash=False)
+stdout("C2PA content credentials:", "## ", stash=False)
+stdout(
+    c2patest.make_c2pa_report(c2patest.check_c2pa(assets)),
     "```\n",
     "\n```\n",
     stash=False,
