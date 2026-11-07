@@ -32,9 +32,8 @@ for category in ("human", "ai"):
 def clear() -> None:
     if os_name == "Windows":
         subprocess.run("cls", shell=True)
-    else:
-        subprocess.call("clear")
-
+    elif "TERM" in os.environ:
+        subprocess.run("clear")
 
 clear()
 print("Please pick from one of the available files, or enter a project ID:")
