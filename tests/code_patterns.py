@@ -82,14 +82,14 @@ def get_sequence_signal(key: tuple) -> float:
 
 	init_ratio = sum(1 for op in ops if op in INIT_OPCODES) / length
 	call_ratio = sum(1 for op in ops if op == "procedures_call") / length
-	variation = unique_ops / length
+	variation = min(1.0, unique_ops / min(length, 6))
 
 	# call and init chains are common in human-made projects,
 	# -> they shouldn't count as strong evidence of AI-generated code
 	return variation * max(0.0, 1.0 - init_ratio * 1.25 - call_ratio * 1.5)
 
 
-def is_low_signal_sequence(key: tuple) -> bool:  # wrapper
+def is_low_signal_sequence(key: tuple) -> bool:
 	return get_sequence_signal(key) < 0.4
 
 
@@ -110,7 +110,10 @@ def describe_sequence(key: tuple, max_ops: int = 4) -> str:
 
 
 def report(
-	grouped: dict, scoped: bool = False, scope_blocks: int | None = None
+	grouped: dict,
+	scoped: bool = False,
+	scope_blocks: int | None = None,
+	sequence_blocks: int | None = None,
 ) -> dict:
 	# prioritize patterns with the greatest potential duplication
 	ordered = sorted(
@@ -158,8 +161,8 @@ def report(
 			continue
 		if not scoped and count < 3:
 			continue
-		claimed.update(local_claimed)
 
+		claimed.update(local_claimed)
 		duplicates = length * (count - 1)
 		duplicated += duplicates
 		findings.append(
@@ -177,6 +180,7 @@ def report(
 
 	return {
 		"total_blocks": total_blocks,
+		"sequence_blocks": sequence_blocks or 0,
 		"duplicated_blocks": duplicated,
 		"repetition_ratio": (
 			round(duplicated / total_blocks, 3) if total_blocks else 0.0
@@ -206,7 +210,7 @@ def analyze_repetition(
 	targets: dict = {}
 	all_runs: dict[tuple, list[tuple[str, list[str]]]] = defaultdict(list)
 	project_blocks: int = 0
-
+	project_sequence_blocks: int = 0
 	for i, target in enumerate(project.get("targets", [])):
 		if not isinstance(target, dict):
 			continue
@@ -217,14 +221,18 @@ def analyze_repetition(
 
 		name: str = target.get("name", f"target_{i}")
 		sprite_blocks: int = count_blocks(blocks)
-		project_blocks += sprite_blocks
-		runs = split_runs_by_init(
+
+		runs: list = split_runs_by_init(
 			get_sequence_runs(blocks),
 			blocks,
 			min_len=threshold,
 			keep_init=not exclude_init,
 		)
-		candidates = get_similar_sequence_candidates(runs, blocks, threshold)
+
+		sequence_blocks: int = sum(len(r) for r in runs)
+		project_blocks += sprite_blocks
+		project_sequence_blocks += sequence_blocks
+		candidates: list = get_similar_sequence_candidates(runs, blocks, threshold)
 		grouped = defaultdict(list)
 
 		for group in candidates:
@@ -247,7 +255,9 @@ def analyze_repetition(
 			for key, occurrences in grouped.items()
 		}
 
-		targets[name] = report(grouped, scope_blocks=sprite_blocks)
+		targets[name] = report(
+			grouped, scope_blocks=sprite_blocks, sequence_blocks=sequence_blocks
+		)
 
 		for key, runs in grouped.items():
 			for run in runs:
@@ -281,14 +291,24 @@ def analyze_repetition(
 			)
 
 	cross_sprite.sort(key=lambda f: -(f["length"] * f["total"]))
+	merged = report(
+		merged_grouped,
+		scoped=True,
+		scope_blocks=project_blocks,
+		sequence_blocks=project_sequence_blocks,
+	)
+	cross = report(
+			cross_grouped,
+			scoped=True,
+			scope_blocks=project_blocks,
+			sequence_blocks=project_sequence_blocks,
+		)
 
 	return {
 		"targets": targets,
-		"merged": report(merged_grouped, scoped=True, scope_blocks=project_blocks),
+		"merged": merged,
 		"cross_sprite": cross_sprite,
-		"cross_sprite_report": report(
-			cross_grouped, scoped=True, scope_blocks=project_blocks
-		),
+		"cross_sprite_report": cross,
 	}
 
 
