@@ -11,7 +11,7 @@ def simplify(input):  # follows the process listed at the check_variables functi
     )  # could it be shorter? yeah. but i like having it more readable like this
 
 
-def check_variables(project: dict[str, dict | list], stdout: Callable):
+def check_variables(project: dict[str, dict | list], stdout: Callable, create_log_sections: bool):
     cases = {
         "scratch_generated": 0,  # Scratch generated are variables 20 characters long generated from a specific pool of characters
         "code_generated": 0,
@@ -31,7 +31,14 @@ def check_variables(project: dict[str, dict | list], stdout: Callable):
     # These are all the possible characters in scratch variable ids
 
     for sprite in project["targets"]:
-        stdout("Reading sprite " + sprite["name"], "\n* ")
+        if create_log_sections:
+            stdout("<details>\n<summary>", suffix="")
+
+        stdout("Reading sprite " + sprite["name"], suffix="")
+        if create_log_sections:
+            stdout("</summary>")
+
+        stdout("")
         for varID in sprite["variables"]:
             if all(char in soup for char in varID) and len(varID) == 20:
                 cases["scratch_generated"] += 1
@@ -49,7 +56,13 @@ def check_variables(project: dict[str, dict | list], stdout: Callable):
                 f"Matches: {simplify(sprite['variables'][varID][0]) == simplify(varID)} - "
                 f"Name: \"{sprite['variables'][varID][0]}\" - ID: {varID} - "
                 f"Simplified: {simplify(sprite['variables'][varID][0])}, {simplify(varID)}",
-                "  * ",
+                "* ",
             )
 
+        if create_log_sections:
+            stdout("</details>",)
+
+    if create_log_sections:
+        stdout("<br>")
+        
     return cases

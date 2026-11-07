@@ -26,6 +26,8 @@ flags: list[str] = list(filter(lambda arg: arg.startswith("--"), args))
 stdout = lambda txt, prefix="", suffix="": print(txt)
 fstdout = lambda txt, prefix="", suffix="": prettyprint.prettyprint(txt)
 
+create_log_sections = "--remove-log-sections" not in flags and "--output-logs" not in flags
+
 if "--output-logs" not in flags:
     log_file = open("logs.md", "w", encoding="utf-8")
     stdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + txt + suffix)
@@ -69,15 +71,15 @@ clear()
 stdout("--- Begin testing ---", "# ")
 
 stdout("Checking variables...", "\n**", "**\n")
-var_results = vartest.check_variables(project, stdout)
+var_results = vartest.check_variables(project, stdout, create_log_sections)
 
-stdout("Checking script coordinates...", "\n**", "**\n")
-coords_results = coordtest.check_script_coords(project, stdout)
+stdout("Checking script coordinates...", "\n**", "**\n\n")
+coords_results = coordtest.check_script_coords(project, stdout, create_log_sections)
 
-stdout("Checking for repetition...", "\n**", "**\n")
+stdout("Checking for repetition...", "\n**", "**\n\n")
 repetition_results = patterntest.analyze_repetition(project, 5)
 
-stdout("--- Test results ---", "# ")
+stdout("--- Test results ---", "\n# ")
 stdout("")
 stdout("Variable test:", "## ")
 fstdout(var_results, "```py\n", "\n```\n")
@@ -92,13 +94,6 @@ fstdout(project["meta"], "```py\n", "\n```\n")
 
 stdout("")
 stdout("Repetition test:", "## ")
-stdout("Notes:")
-stdout("AI relies on automated templates when generating SB3s.", "* ")
-stdout(
-    "As such, the same block patterns get copied over and over, something a human programmer would be unlikely to produce.",
-    "* ",
-)
-stdout("However, keep in mind that this test is not that decisive.", "* ")
 stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n")
 
 if "--output-logs" not in flags:
