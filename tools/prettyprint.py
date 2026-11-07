@@ -13,8 +13,11 @@ class ANSI:
 
 
 def format(value: Any, indent: int = 0) -> str:
-	if isinstance(value, (str, int, float, bool)):
-		return f"{ANSI.GREEN}{repr(value)}{ANSI.RESET}"
+	if isinstance(value, str):
+		return f"{ANSI.RED}{value!r}{ANSI.RESET}"
+	
+	if isinstance(value, (int, float, bool)):
+		return f"{ANSI.GREEN}{value!r}{ANSI.RESET}"
 
 	if value is None:
 		return f"{ANSI.GRAY}None{ANSI.RESET}"

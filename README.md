@@ -16,6 +16,24 @@ All outputs are directed to `logs.md` unless specified otherwise.
 * `--min-sequence`: The minimum block count of a detectable sequence. Defaults to `5`.
 
 # Detection methods
+
+## Test Categorization
+
+| Test | Effectiveness | False positives |
+|-|-|-|
+| Variable IDs | Strong | Low |
+| Coordinates | Moderate | Moderate |
+| Repetition | Moderate | Moderate |
+
+These ratings reflect the current implementation and sample set.
+
+### Conclusion
+
+* Variable IDs remain the strongest signal because Scratch-generated IDs are hard to fake convincingly without leaving obvious numerical or name-based artifacts.
+* Coordinates are moderately useful for spotting templated or grid-like AI layouts, but they are not definitive on their own.
+* Repetition is a moderate signal only when it is high-quality, non-boilerplate repetition across scripts or sprites; weak or repetitive boilerplate patterns are filtered out to reduce false positives.
+
+
 ## Variable IDs
 Inside of `project.json`, each variable in a Scratch project is stored with a variable ID that holds both the variable name and its value:
 ```json
@@ -47,15 +65,20 @@ In a Scratch project, the coordinates of top-level blocks (blocks with `topLevel
 This test checks if there's a grid-like pattern or stacked blocks on one coordinate. An AI-generated Scratch project often has coordinates in top-level blocks such `"150, 100; 0, 10..."` and not `"157, 102; 2, 13..."`
 
 ## Repetition
-Repeated block patterns are another strong signal of AI generation. In AI-generated projects, the same script structure often appears multiple times across a sprite or even across different sprites, with only minor changes in IDs or references.
+Repeated block patterns are another potential sign of AI generation. In AI-generated projects, the same script structure often appears multiple times even across different sprites, with only minor changes in inputs or references.
 
-This analyzer groups valid block runs by their block signature. A block signature is based on the opcode, fields, mutation, and input layout, so similar sequences count as the same pattern even when the underlying block IDs differ.
+That said, even though generated code can be unnaturally uniform, humans also produce duplicate code heavily due to Scratch's limitations. Therefore, the repetition test ignores low-signal patterns such as repeated `procedures_call` chains or initialization-only list/variable updates, because those are often boilerplate and are common in human-made projects.
 
-The analyzer then measures and produces a report based on the following:
+### Procedure
 
-* per-sprite repetition
-* cross-sprite repetition
-* whole-project repetition ratio
+1. The analyzer identifies repeated sequences and subsequences of blocks. It compares block signatures based on their opcode, fields, mutation, and input layout, allowing structurally equivalent blocks to be grouped even when their underlying block IDs or inputs differ.
+2. The analyzer finds matching sequences of at least a specified minimum length, extending matches for as long as subsequent block signatures remain identical. This allows it to identify complete duplicate sequences as well as repeated portions of otherwise different scripts.
+3. The analyzer then measures and produces a report based on the following:
+    * per-sprite repetition
+    * cross-sprite repetition
+    * whole-project repetition ratio
+
+### Repetitiveness report
 
 The report includes a short preview such as:
 
@@ -71,9 +94,9 @@ and data such as:
 
 It also calculates a repetition ratio as follows:
 ```
-                      # duplicated blocks
-repetition ratio = --------------------------
-                   total # blocks in sequence
+                       # duplicated blocks
+repetition ratio = ---------------------------
+                   total # blocks in sequences
 ```
 
-A high repetition ratio is usually a sign that the project is AI-generated, especially when the same pattern repeats in lots of scripts. However, a low ratio **does not mean that the project is not AI-generated!**
+A high repetition ratio indicates that a project contains substantial amounts of duplicated code, especially when similar patterns repeat in lots of scripts or sprites. However, repetition alone is not definitive evidence of AI generation, and a low ratio **does not mean that the project is not AI-generated**!

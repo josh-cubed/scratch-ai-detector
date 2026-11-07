@@ -5,6 +5,7 @@ from types import NoneType
 from .block_constants import *
 import json
 
+
 SEQUENCE_MAX_WINDOW = 32  # TODO: add flag
 
 
@@ -526,6 +527,13 @@ def collect_sequence_runs(blocks, threshold: int = 2) -> dict[tuple, list[list[s
 
 	return grouped
 
+
+def count_blocks(blocks: dict) -> int:
+	return sum(
+		1
+		for b in blocks.values()
+		if isinstance(b, dict) and not b.get("shadow", False)
+	)
 
 # More analysis coming soon, I'll have to look into more examples
 # so that's all i can provide for today

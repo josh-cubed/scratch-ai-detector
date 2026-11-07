@@ -22,6 +22,11 @@ arg_parser.add_argument(
     default=5,
     help="The minimum block count of a detectable sequence.",
 )
+arg_parser.add_argument(
+    "--include-inits",
+    action="store_true",
+    help="Whether to include data initializations when testing repetition."
+)
 
 args = arg_parser.parse_args()
 stashed_lines: list[str] = []

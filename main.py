@@ -41,10 +41,14 @@ while answer <= 0:
     answer = int(input("Enter a file number or project ID: "))
 
 if answer - 1 > len(available_files):
+    if not args.output_logs:
+        stdout(f"https://scratch.mit.edu/projects/{answer}", stash=False)
     print("Getting project...")
     project = projects.download_json(int(answer))
 else:
     sb3file = f"samples/{available_files[answer - 1]}"
+    if not args.output_logs:
+        stdout(f"{sb3file}", stash=False)
 
     with ZipFile(sb3file, "r") as zObject:
         zObject.extract("project.json", path="")
@@ -64,7 +68,9 @@ stdout("Checking script coordinates...", "\n**", "**\n\n")
 coords_results = coordtest.check_script_coords(project, stdout, create_log_sections)
 
 stdout("Checking for repetition...", "\n**", "**\n\n")
-repetition_results = patterntest.analyze_repetition(project, args.min_sequence)
+repetition_results = patterntest.analyze_repetition(
+    project, args.min_sequence, not args.include_inits
+)
 
 stdout("--- Test Results ---", "\n# ", stash=False)
 stdout("", stash=False)
@@ -81,7 +87,12 @@ fstdout(project["meta"], "```py\n", "\n```\n", stash=False)
 
 stdout("", stash=False)
 stdout("Repetition test:", "## ", stash=False)
-stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n", stash=False)
+stdout(
+    patterntest.make_repetitiveness_report(repetition_results),
+    "```\n",
+    "\n```\n",
+    stash=False,
+)
 
 # Cleanup file after use (VERY IMPORTANT, DO NOT REMOVE)
 if not args.output_logs:
