@@ -1,11 +1,10 @@
+from cli import args, finish, fstdout, stdout
 from zipfile import ZipFile
 
-import argparse
 import json
 import os
 import platform
 import subprocess
-import sys
 import tests.variables as vartest
 import tests.code_patterns as patterntest
 import tests.coords as coordtest
@@ -21,25 +20,7 @@ available_files: list[str] = list(
     filter(lambda file: file.endswith(".sb3"), os.listdir("samples"))
 )
 project: dict[str, list | dict] = {}
-
-arg_parser = argparse.ArgumentParser(
-    description="An AI-generated Scratch project detector."
-)
-arg_parser.add_argument("--output-logs", action="store_true", help="Print the test logs to the console instead of to logs.md.")
-arg_parser.add_argument("--no-log-sections", action="store_true", help="Remove collapsible log sections in logs.md.")
-
-args = arg_parser.parse_args()
-stdout = lambda txt, prefix="", suffix="": print(txt)
-fstdout = lambda txt, prefix="", suffix="": prettyprint.prettyprint(txt)
-
 create_log_sections = not args.no_log_sections and not args.output_logs
-
-if not args.output_logs:
-    log_file = open("logs.md", "w", encoding="utf-8")
-    stdout = lambda txt, prefix="", suffix="\n": log_file.write(prefix + txt + suffix)
-    fstdout = lambda txt, prefix="", suffix="\n": log_file.write(
-        prefix + prettyprint.clean_format(txt) + suffix
-    )
 
 
 def clear() -> None:
@@ -74,33 +55,34 @@ else:
 
 clear()
 
-stdout("--- Begin testing ---", "# ")
+stdout("--- Test Logs ---", "# ")
 
-stdout("Checking variables...", "\n**", "**\n")
+stdout("Checking variables...", "\n**", "**\n\n")
 var_results = vartest.check_variables(project, stdout, create_log_sections)
 
 stdout("Checking script coordinates...", "\n**", "**\n\n")
 coords_results = coordtest.check_script_coords(project, stdout, create_log_sections)
 
 stdout("Checking for repetition...", "\n**", "**\n\n")
-repetition_results = patterntest.analyze_repetition(project, 5)
+repetition_results = patterntest.analyze_repetition(project, args.min_sequence)
 
-stdout("--- Test results ---", "\n# ")
-stdout("")
-stdout("Variable test:", "## ")
-fstdout(var_results, "```py\n", "\n```\n")
+stdout("--- Test Results ---", "\n# ", stash=False)
+stdout("", stash=False)
+stdout("Variable test:", "## ", stash=False)
+fstdout(var_results, "```py\n", "\n```\n", stash=False)
 
-stdout("")
-stdout("Coordinates test:", "## ")
-fstdout(coords_results, "```py\n", "\n```\n")
+stdout("", stash=False)
+stdout("Coordinates test:", "## ", stash=False)
+fstdout(coords_results, "```py\n", "\n```\n", stash=False)
 
-stdout("")
-stdout("Metadata:", "## ")
-fstdout(project["meta"], "```py\n", "\n```\n")
+stdout("", stash=False)
+stdout("Metadata:", "## ", stash=False)
+fstdout(project["meta"], "```py\n", "\n```\n", stash=False)
 
-stdout("")
-stdout("Repetition test:", "## ")
-stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n")
+stdout("", stash=False)
+stdout("Repetition test:", "## ", stash=False)
+stdout(patterntest.make_repetitiveness_report(repetition_results), "```\n", "\n```\n", stash=False)
 
+# Cleanup file after use (VERY IMPORTANT, DO NOT REMOVE)
 if not args.output_logs:
-    log_file.close()
+    finish()

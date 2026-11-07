@@ -11,8 +11,9 @@ When running the program you'll get prompted to select a project. The numbered o
 All outputs are directed to `logs.md` unless specified otherwise.
 
 ### Flags
-* `--output-logs`: Prints the test logs to the console instead of writing it to `logs.md`
-* `--no-log-sections`: Removes collapsible sections from the logs.
+* `--output-logs`: Print the test logs to the console instead of to `logs.md`.
+* `--no-log-sections`: Remove collapsible log sections in `logs.md`. Has no effect hen `--output-logs` is enabled.
+* `--min-sequence`: The minimum block count of a detectable sequence. Defaults to `5`.
 
 # Detection methods
 ## Variable IDs

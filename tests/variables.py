@@ -61,6 +61,8 @@ def check_variables(project: dict[str, dict | list], stdout: Callable, create_lo
 
         if create_log_sections:
             stdout("</details>",)
+        else:
+            stdout("")
 
     if create_log_sections:
         stdout("<br>")
